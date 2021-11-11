@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useReducer } from "react";
+import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { v1 as uuid } from "uuid";
 import { findItemIndexById } from "./utils/findItemIndexById";
 import { DragItem } from "./DragItem";
 import { moveItem } from "./utils/moveItem";
+import { save } from "./api";
+import { withData } from "./withData";
 
 type Action =
   | {
@@ -123,14 +125,22 @@ const appStateReducer = (state: AppState, action: Action): AppState => {
   }
 };
 
-export const AppStateProvider = ({ children }: React.PropsWithChildren<{}>) => {
-  const [state, dispatch] = useReducer(appStateReducer, appData);
-  return (
-    <AppStateContext.Provider value={{ state, dispatch }}>
-      {children}
-    </AppStateContext.Provider>
-  );
-};
+export const AppStateProvider = withData(
+  ({
+    children,
+    initialState,
+  }: React.PropsWithChildren<{ initialState: AppState }>) => {
+    const [state, dispatch] = useReducer(appStateReducer, initialState);
+    useEffect(() => {
+      save(state);
+    }, [state]);
+    return (
+      <AppStateContext.Provider value={{ state, dispatch }}>
+        {children}
+      </AppStateContext.Provider>
+    );
+  }
+);
 
 export const useAppState = () => {
   const appStateContext = useContext(AppStateContext);
